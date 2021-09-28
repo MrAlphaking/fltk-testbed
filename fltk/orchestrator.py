@@ -58,7 +58,12 @@ class Orchestrator(object):
     def run(self, clear: bool = True) -> None:
         """
         Main loop of the Orchestartor.
-        :return:
+        @param clear: Boolean indicating whether a previous deployment needs to be cleaned up (i.e. lingering jobs that
+        were deployed by the previous run).
+
+        @type clear: bool
+        @return: None
+        @rtype: None
         """
         self._alive = True
         start_time = time.time()
@@ -67,6 +72,8 @@ class Orchestrator(object):
         while self._alive and time.time() - start_time < self._config.get_duration():
             # 1. Check arrivals
             # If new arrivals, store them in arrival list
+            print('Arrive')
+            print(self.__arrival_generator.arrivals.qsize())
             while not self.__arrival_generator.arrivals.empty():
                 arrival: Arrival = self.__arrival_generator.arrivals.get()
                 unique_identifier: uuid.UUID = uuid.uuid4()
@@ -80,25 +87,32 @@ class Orchestrator(object):
                 self.__logger.debug(f"Arrival of: {task}")
                 self.pending_tasks.put(task)
 
+            print('Task')
+            value = False
+            print(self.pending_tasks.qsize())
+            if self.pending_tasks.qsize() == 3:
+                value = True
             while not self.pending_tasks.empty():
                 # Do blocking request to priority queue
                 curr_task = self.pending_tasks.get()
                 self.__logger.info(f"Scheduling arrival of Arrival: {curr_task.id}")
                 job_to_start = construct_job(self._config, curr_task)
 
-
                 # Hack to overcome limitation of KubeFlow version (Made for older version of Kubernetes)
-                self.__logger.info(f"Deploying on cluster: {curr_task.id}")
-                self.__client.create(job_to_start, namespace=self._config.cluster_config.namespace)
-                self.deployed_tasks.append(curr_task)
+                if value:
+                    self.deployed_tasks.append(curr_task)
+                    self.__logger.info(f"Deploying on cluster: {curr_task.id}")
+                    self.__client.create(job_to_start, namespace=self._config.cluster_config.namespace)
 
                 # TODO: Extend this logic in your real project, this is only meant for demo purposes
                 # For now we exit the thread after scheduling a single task.
-
-                self.stop()
-                return
+                # self.stop()
+                # return
 
             self.__logger.debug("Still alive...")
+            # print(self.deployed_tasks.__sizeof__())
+            if value:
+                self.stop()
             time.sleep(5)
 
         logging.info(f'Experiment completed, currently does not support waiting.')
