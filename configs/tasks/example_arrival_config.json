@@ -65,8 +65,8 @@
     "jobClassParameters": [
       {
         "networkConfiguration": {
-          "network": "CIFAR10CNN",
-          "dataset": "CIFAR10"
+          "network": "FashionMNISTCNN",
+          "dataset": "FashionMNIST"
         },
         "systemParameters": {
           "dataParallelism": "1",

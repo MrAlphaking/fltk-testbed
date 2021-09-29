@@ -131,12 +131,25 @@ class Client(object):
         listLength = len(self.dataset.get_train_loader())
 
         for i, (inputs, labels) in enumerate(self.dataset.get_train_loader()):
-            if(i % (listLength / 10) == 0):
+            if(i % (listLength / 100) == 0):
                 start_time_test = datetime.datetime.now()
                 accuracy, test_loss, class_precision, class_recall, confusion_mat = self.test()
-                elapsed_time_test = datetime.datetime.now() - start_time_test
 
-                train_time_ms = int((start_time_train - elapsed_time_test).total_seconds() * 1000)
+                elapsed_time_test = datetime.datetime.now() - start_time_test
+                elapsed_time_from_start = start_time_test - start_time_train
+                self._logger.info("HEREEE")
+                self._logger.info(elapsed_time_test)
+                self._logger.info(elapsed_time_from_start)
+                # print(elapsed_time_test)
+                elapsed_time = elapsed_time_from_start.total_seconds() - elapsed_time_test.total_seconds()
+
+
+                train_time_ms = int(elapsed_time)
+
+                self._logger.info(train_time_ms)
+
+                # elapsed_time_test = datetime.datetime.now() - start_time_test
+                # test_time_ms = int(elapsed_time_test.total_seconds() * 1000)
 
                 data = EpochData(epoch_id=epoch,
                                  duration_train=train_time_ms,
@@ -149,6 +162,8 @@ class Client(object):
                                  confusion_mat=confusion_mat)
 
                 epoch_results.append(data)
+                self.log_progress_new(data)
+                # self.log_progress(epoch, accuracy)
 
             # zero the parameter gradients
             self.optimizer.zero_grad()
@@ -259,8 +274,8 @@ class Client(object):
             print('Epoch resultssssssssssssssssssssssssssssssssss:')
             print(epoch_results)
             # self.log_progress(epoch, accuracy)
-            if self._id == 0:
-                self.log_progress(data, epoch)
+            # if self._id == 0:
+                # self.log_progress(data, epoch)
         return epoch_results
 
     def save_model(self, epoch):
@@ -270,6 +285,11 @@ class Client(object):
         """
         self._logger.debug(f"Saving model to flat file storage. Saved at epoch #{epoch}")
         save_model(self.model, self.config.get_save_model_folder_path(), epoch)
+
+    def log_progress_new(self, epoch_data: EpochData):
+        self.tb_writer.add_scalar('accuracy vs training time',
+                                  epoch_data.accuracy ,
+                                  epoch_data.duration_train)
 
     def log_progress(self, epoch_data: EpochData, epoch):
 
