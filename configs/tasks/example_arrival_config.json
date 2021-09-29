@@ -13,9 +13,9 @@
           "action": "train"
         },
         "hyperParameters": {
-          "batchSize": "64",
-          "maxEpoch": "2",
-          "learningRate": "0.01",
+          "batchSize": "1",
+          "maxEpoch": "10",
+          "learningRate": "0.005",
           "learningrateDecay": "0.0002"
         },
         "classProbability": 0.1,
@@ -44,9 +44,9 @@
           "action": "train"
         },
         "hyperParameters": {
-          "batchSize": "128",
-          "maxEpoch": "2",
-          "learningRate": "0.01",
+          "batchSize": "2",
+          "maxEpoch": "10",
+          "learningRate": "0.005",
           "learningrateDecay": "0.0002"
         },
         "classProbability": 0.1,
@@ -65,8 +65,8 @@
     "jobClassParameters": [
       {
         "networkConfiguration": {
-          "network": "FashionMNISTCNN",
-          "dataset": "FashionMNIST"
+          "network": "CIFAR10CNN",
+          "dataset": "CIFAR10"
         },
         "systemParameters": {
           "dataParallelism": "1",
@@ -75,9 +75,9 @@
           "action": "train"
         },
         "hyperParameters": {
-          "batchSize": "32",
-          "maxEpoch": "2",
-          "learningRate": "0.01",
+          "batchSize": "4",
+          "maxEpoch": "10",
+          "learningRate": "0.005",
           "learningrateDecay": "0.0002"
         },
         "classProbability": 0.1,

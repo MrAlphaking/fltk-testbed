@@ -89,6 +89,8 @@ class Orchestrator(object):
 
             print('Task')
             value = False
+
+            # print(PyTorchJobClient.get(namespace='test').__sizeof__())
             print(self.pending_tasks.qsize())
             if self.pending_tasks.qsize() == 3:
                 value = True

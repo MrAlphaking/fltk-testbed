@@ -340,7 +340,7 @@ class DeploymentBuilder:
 
     def create_identifier(self, task: ArrivalTask):
         self._buildDescription.id = task.id
-
+        # self._buildDescription.id = task.sys_conf
 
 def construct_job(conf: BareConfig, task: ArrivalTask) -> V1PyTorchJob:
     """

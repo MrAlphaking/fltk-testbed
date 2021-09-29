@@ -112,7 +112,7 @@ class Client(object):
         default_model_path = Path(self.config.get_default_model_folder_path()).joinpath(model_file)
         load_model_from_file(self.model, default_model_path)
 
-    def train(self, epoch, log_interval: int = 50):
+    def train(self, epoch, start_time_train, epoch_results, log_interval: int = 50):
         """
         Function to start training, regardless of DistributedDataParallel (DPP) or local training. DDP will account for
         synchronization of nodes. If extension requires to make use of torch.distributed.send and torch.distributed.recv
@@ -127,7 +127,29 @@ class Client(object):
         running_loss = 0.0
         final_running_loss = 0.0
         self.model.train()
+
+        listLength = len(self.dataset.get_train_loader())
+
         for i, (inputs, labels) in enumerate(self.dataset.get_train_loader()):
+            if(i % (listLength / 10) == 0):
+                start_time_test = datetime.datetime.now()
+                accuracy, test_loss, class_precision, class_recall, confusion_mat = self.test()
+                elapsed_time_test = datetime.datetime.now() - start_time_test
+
+                train_time_ms = int((start_time_train - elapsed_time_test).total_seconds() * 1000)
+
+                data = EpochData(epoch_id=epoch,
+                                 duration_train=train_time_ms,
+                                 duration_test=0,
+                                 loss_train=0,
+                                 accuracy=accuracy,
+                                 loss=test_loss,
+                                 class_precision=class_precision,
+                                 class_recall=class_recall,
+                                 confusion_mat=confusion_mat)
+
+                epoch_results.append(data)
+
             # zero the parameter gradients
             self.optimizer.zero_grad()
 
@@ -196,6 +218,7 @@ class Client(object):
 
         return accuracy, loss, class_precision, class_recall, confusion_mat
 
+
     def run_epochs(self) -> List[EpochData]:
         """
         Function to run epochs with
@@ -205,12 +228,13 @@ class Client(object):
 
         epoch_results = []
         for epoch in range(1, max_epoch):
-            train_loss = self.train(epoch)
+            train_loss = self.train(epoch, start_time_train, epoch_results)
 
             # Let only the 'master node' work on training. Possibly DDP can be used
             # to have a distributed test loader as well to speed up (would require
             # aggregation of data.
             # Example https://github.com/fabio-deep/Distributed-Pytorch-Boilerplate/blob/0206247150720ca3e287e9531cb20ef68dc9a15f/src/datasets.py#L271-L303.
+
             elapsed_time_train = datetime.datetime.now() - start_time_train
             train_time_ms = int(elapsed_time_train.total_seconds() * 1000)
 
@@ -230,7 +254,11 @@ class Client(object):
                              class_recall=class_recall,
                              confusion_mat=confusion_mat)
 
-            epoch_results.append(data)
+            # epoch_results.append(data)
+
+            print('Epoch resultssssssssssssssssssssssssssssssssss:')
+            print(epoch_results)
+            # self.log_progress(epoch, accuracy)
             if self._id == 0:
                 self.log_progress(data, epoch)
         return epoch_results
@@ -245,6 +273,9 @@ class Client(object):
 
     def log_progress(self, epoch_data: EpochData, epoch):
 
+        self.tb_writer.add_scalar('training time vs accuracy',
+                                  epoch_data.duration_train ,
+                                  epoch_data.accuracy)
 
         self.tb_writer.add_scalar('training loss per epoch',
                                     epoch_data.loss_train,
