@@ -92,7 +92,10 @@ class Orchestrator(object):
 
             # print(PyTorchJobClient.get(namespace='test').__sizeof__())
             print(self.pending_tasks.qsize())
-            if self.pending_tasks.qsize() == 3:
+            # while self.pending_tasks.qsize() != 3:
+            #     print(self.pending_tasks.qsize())
+            #     temp = self.pending_tasks.get()
+            if self.pending_tasks.qsize() == 4:
                 value = True
             while not self.pending_tasks.empty():
                 # Do blocking request to priority queue

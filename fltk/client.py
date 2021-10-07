@@ -131,7 +131,7 @@ class Client(object):
         listLength = len(self.dataset.get_train_loader())
 
         for i, (inputs, labels) in enumerate(self.dataset.get_train_loader()):
-            if(i % (listLength / 100) == 0):
+            if(i % (listLength / 1000) == 0):
                 start_time_test = datetime.datetime.now()
                 accuracy, test_loss, class_precision, class_recall, confusion_mat = self.test()
 
@@ -242,39 +242,41 @@ class Client(object):
         start_time_train = datetime.datetime.now()
 
         epoch_results = []
+        lastaccuracy = 0
         for epoch in range(1, max_epoch):
-            train_loss = self.train(epoch, start_time_train, epoch_results)
+            if lastaccuracy <= 92:
+                train_loss = self.train(epoch, start_time_train, epoch_results)
 
-            # Let only the 'master node' work on training. Possibly DDP can be used
-            # to have a distributed test loader as well to speed up (would require
-            # aggregation of data.
-            # Example https://github.com/fabio-deep/Distributed-Pytorch-Boilerplate/blob/0206247150720ca3e287e9531cb20ef68dc9a15f/src/datasets.py#L271-L303.
+                # Let only the 'master node' work on training. Possibly DDP can be used
+                # to have a distributed test loader as well to speed up (would require
+                # aggregation of data.
+                # Example https://github.com/fabio-deep/Distributed-Pytorch-Boilerplate/blob/0206247150720ca3e287e9531cb20ef68dc9a15f/src/datasets.py#L271-L303.
 
-            elapsed_time_train = datetime.datetime.now() - start_time_train
-            train_time_ms = int(elapsed_time_train.total_seconds() * 1000)
+                elapsed_time_train = datetime.datetime.now() - start_time_train
+                train_time_ms = int(elapsed_time_train.total_seconds() * 1000)
 
-            start_time_test = datetime.datetime.now()
-            accuracy, test_loss, class_precision, class_recall, confusion_mat = self.test()
+                start_time_test = datetime.datetime.now()
+                accuracy, test_loss, class_precision, class_recall, confusion_mat = self.test()
+                lastaccuracy = accuracy
+                elapsed_time_test = datetime.datetime.now() - start_time_test
+                test_time_ms = int(elapsed_time_test.total_seconds() * 1000)
 
-            elapsed_time_test = datetime.datetime.now() - start_time_test
-            test_time_ms = int(elapsed_time_test.total_seconds() * 1000)
+                data = EpochData(epoch_id=epoch,
+                                 duration_train=train_time_ms,
+                                 duration_test=0,
+                                 loss_train=0,
+                                 accuracy=accuracy,
+                                 loss=test_loss,
+                                 class_precision=class_precision,
+                                 class_recall=class_recall,
+                                 confusion_mat=confusion_mat)
 
-            data = EpochData(epoch_id=epoch,
-                             duration_train=train_time_ms,
-                             duration_test=test_time_ms,
-                             loss_train=train_loss,
-                             accuracy=accuracy,
-                             loss=test_loss,
-                             class_precision=class_precision,
-                             class_recall=class_recall,
-                             confusion_mat=confusion_mat)
+                # epoch_results.append(data)
 
-            # epoch_results.append(data)
-
-            print('Epoch resultssssssssssssssssssssssssssssssssss:')
-            print(epoch_results)
-            # self.log_progress(epoch, accuracy)
-            # if self._id == 0:
+                print('Epoch resultssssssssssssssssssssssssssssssssss:')
+                print(epoch_results)
+                # self.log_progress(epoch, accuracy)
+                # if self._id == 0:
                 # self.log_progress(data, epoch)
         return epoch_results
 

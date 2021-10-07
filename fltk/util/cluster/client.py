@@ -1,5 +1,6 @@
 import logging
 import time
+import random
 from collections import defaultdict
 from dataclasses import dataclass
 from multiprocessing.pool import ThreadPool
@@ -334,15 +335,13 @@ class DeploymentBuilder:
         job = V1PyTorchJob(
             api_version="kubeflow.org/v1",
             kind="PyTorchJob",
-            # {self._buildDescription.id} This was used in the line below
-            metadata=V1ObjectMeta(name=f'trainjob-{self._buildDescription.id}-maxepochs-{str(task.param_conf.max_epoch)}-bs-{str(task.param_conf.bs)}-lr-{str(task.param_conf.lr)}', namespace='test'),
+            metadata=V1ObjectMeta(name=f'trainjob-{str(random.randint(0, 1000))}-cores-{task.sys_conf.executor_cores}-bs-{task.param_conf.bs}-lr-{task.param_conf.lr}', namespace='test'),
             spec=self._buildDescription.spec)
         return job
 
-
     def create_identifier(self, task: ArrivalTask):
         self._buildDescription.id = task.id
-        # self._buildDescription.id = task.sys_conf
+
 
 def construct_job(conf: BareConfig, task: ArrivalTask) -> V1PyTorchJob:
     """
