@@ -78,7 +78,7 @@ class Client(object):
                                           self.config.get_scheduler_gamma(),
                                           self.config.get_min_lr())
 
-        self.tb_writer = SummaryWriter(str(self.config.get_log_path(self._task_id, self._id, self.learning_params.model)))
+        self.tb_writer = SummaryWriter(str(self.config.get_log_path(self._task_id, self._id, self.learning_params.model)) + '-LR:' + str(self.learning_params.learning_rate) + '-BS:' + str(self.learning_params.batch_size))
 
     def stop_learner(self):
         self._logger.info(f"Tearing down Client {self._id}")

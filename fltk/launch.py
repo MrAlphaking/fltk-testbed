@@ -50,6 +50,7 @@ def launch_client(task_id: str, config: BareConfig = None, learning_params: Lear
         backend = dist.get_backend()
     logging.info(f'Starting Creating client with {rank}')
     client = Client(rank, task_id, world_size, config, learning_params)
+
     client.prepare_learner(distributed)
     epoch_data = client.run_epochs()
     print(epoch_data)

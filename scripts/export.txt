@@ -1,0 +1,1 @@
+kubectl cp --namespace test fl-extractor:/opt/federation-lab/logging ./charts/logging
