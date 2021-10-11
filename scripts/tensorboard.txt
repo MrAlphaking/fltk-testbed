@@ -1,0 +1,1 @@
+kubectl port-forward -n test fl-extractor 6006:6006

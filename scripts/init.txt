@@ -1,0 +1,3 @@
+helm uninstall -n test extractor 
+helm install extractor ./charts/extractor -f charts/fltk-values.yaml -n test
+

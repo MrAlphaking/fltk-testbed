@@ -13,6 +13,7 @@ from fltk.util.config.base_config import BareConfig
 from fltk.util.task.generator.arrival_generator import ArrivalGenerator, Arrival
 from fltk.util.task.task import ArrivalTask
 
+AMOUNT_OF_TASKS = 4
 
 class Orchestrator(object):
     """
@@ -87,16 +88,20 @@ class Orchestrator(object):
                 self.__logger.debug(f"Arrival of: {task}")
                 self.pending_tasks.put(task)
 
+            if self.pending_tasks.qsize() != AMOUNT_OF_TASKS:
+                print(self.pending_tasks.qsize())
+                print('CONTINUEEEEEEEEEEEEE')
+                continue
             print('Task')
             value = False
-
+            if self.pending_tasks.qsize() == AMOUNT_OF_TASKS:
+                value = True
             # print(PyTorchJobClient.get(namespace='test').__sizeof__())
             print(self.pending_tasks.qsize())
             # while self.pending_tasks.qsize() != 3:
             #     print(self.pending_tasks.qsize())
             #     temp = self.pending_tasks.get()
-            if self.pending_tasks.qsize() == 4:
-                value = True
+
             while not self.pending_tasks.empty():
                 # Do blocking request to priority queue
                 curr_task = self.pending_tasks.get()
