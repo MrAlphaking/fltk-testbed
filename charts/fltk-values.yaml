@@ -2,5 +2,5 @@ fltk:
     config: cloud_experiment.yaml
 provider:
     domain: gcr.io
-    projectName: industrial-ego-325412
+    projectName: qpecs-project-backend
     imageName: fltk:latest

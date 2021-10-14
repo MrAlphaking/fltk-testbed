@@ -3,6 +3,7 @@ import time
 import uuid
 from queue import PriorityQueue
 from typing import List
+import numpy as np
 
 from kubeflow.pytorchjob import PyTorchJobClient
 from kubeflow.pytorchjob.constants.constants import PYTORCHJOB_GROUP, PYTORCHJOB_VERSION, PYTORCHJOB_PLURAL
@@ -14,6 +15,26 @@ from fltk.util.task.generator.arrival_generator import ArrivalGenerator, Arrival
 from fltk.util.task.task import ArrivalTask
 
 AMOUNT_OF_TASKS = 4
+
+# AMOUNT_OF_TASKS needs to match the total amount of jobs im scheduling or it wont start
+
+number_of_jobs = AMOUNT_OF_TASKS
+lamda = 0.7
+service_rate = 1
+
+jobs = []
+
+# inter_arrival_times = np.random.exponential(1/lamda, number_of_jobs)*10
+# job_sizes = np.maximum(np.floor(np.random.exponential(1/service_rate, number_of_jobs) * 3), np.ones(number_of_jobs))
+inter_arrival_times = [1,1,1,1]
+job_sizes = [1,1,1,1]
+
+arrival_in_q = np.zeros(number_of_jobs)
+arrival_in_server = np.zeros(number_of_jobs)
+completion_time = np.zeros(number_of_jobs)
+current_time = 0
+
+print("number_of_jobs = ", number_of_jobs)
 
 class Orchestrator(object):
     """
@@ -70,39 +91,60 @@ class Orchestrator(object):
         start_time = time.time()
         if clear:
             self.__clear_jobs()
+
+        print("################################# Created index #################################")
+        index = 0
+        index_arrivals = 0
+
+        print("################################# Starting arrivals loader #################################")
         while self._alive and time.time() - start_time < self._config.get_duration():
             # 1. Check arrivals
             # If new arrivals, store them in arrival list
-            print('Arrive')
-            print(self.__arrival_generator.arrivals.qsize())
+            # print('Arrive')
+            # print(self.__arrival_generator.arrivals.qsize())
+
             while not self.__arrival_generator.arrivals.empty():
+                print(f"################################# In arrivals loop, index = {index_arrivals} #################################")
                 arrival: Arrival = self.__arrival_generator.arrivals.get()
                 unique_identifier: uuid.UUID = uuid.uuid4()
+                #### QUE STUFF #####
+                arrival.get_parameter_config().max_epoch = job_sizes[index_arrivals]
+                index_arrivals += 1
+                #### END QUE STUFF #####
                 task = ArrivalTask(priority=arrival.get_priority(),
                                    id=unique_identifier,
                                    network=arrival.get_network(),
                                    dataset=arrival.get_dataset(),
                                    sys_conf=arrival.get_system_config(),
                                    param_conf=arrival.get_parameter_config())
-
                 self.__logger.debug(f"Arrival of: {task}")
                 self.pending_tasks.put(task)
 
             if self.pending_tasks.qsize() != AMOUNT_OF_TASKS:
-                print(self.pending_tasks.qsize())
-                print('CONTINUEEEEEEEEEEEEE')
+                # print(self.pending_tasks.qsize())
+                # print('CONTINUEEEEEEEEEEEEE')
                 continue
-            print('Task')
+            # print('Task')
             value = False
             if self.pending_tasks.qsize() == AMOUNT_OF_TASKS:
                 value = True
             # print(PyTorchJobClient.get(namespace='test').__sizeof__())
-            print(self.pending_tasks.qsize())
+            # print(self.pending_tasks.qsize())
             # while self.pending_tasks.qsize() != 3:
             #     print(self.pending_tasks.qsize())
             #     temp = self.pending_tasks.get()
 
+            #### QUE STUFF #####
+            print("################################# Starting que stuff #################################")
+            server_start_time = time.time() # Start timer on deployment start
+            time.sleep(inter_arrival_times[index]) # Wait the first interarrival time
+            arrival_in_q[0] = time.time() - server_start_time   # log the first entry to the q
+            #### END QUE STUFF #####
+
             while not self.pending_tasks.empty():
+                #### QUE STUFF #####
+                arrival_in_server[index] = time.time() - server_start_time  # log the first entry to the server
+                #### END QUE STUFF #####
                 # Do blocking request to priority queue
                 curr_task = self.pending_tasks.get()
                 self.__logger.info(f"Scheduling arrival of Arrival: {curr_task.id}")
@@ -118,6 +160,36 @@ class Orchestrator(object):
                 # For now we exit the thread after scheduling a single task.
                 # self.stop()
                 # return
+
+                #### QUE STUFF #####
+                # If we finished all the jobs stop, to avoid index out of bounds etc
+                if index == number_of_jobs:
+                    print("Job: i, arrival in q time: time, arrival in server time: time, completion time: time")
+                    for i in range(number_of_jobs):
+                        print(f"{i} {arrival_in_q[i]} {arrival_in_server[i]} {completion_time[i]}")
+                    self.stop()
+                # Wait until job completes
+                print("################################# (Not) Sleeping 100 #################################")
+                # time.sleep(100) # This is here because checking job status too early may cause it to crash
+                print(f"self.__client.get(namespace=self._config.cluster_config.namespace)['items'][0]['metadata']['name']: {self.__client.get(namespace=self._config.cluster_config.namespace)['items'][0]['metadata']['name']}")
+                job_name = self.__client.get(namespace=self._config.cluster_config.namespace)['items'][0]['metadata']['name'] #+ "-master-0"
+                print(f"self.__client.get_job_status = {self.__client.get_job_status(job_name, namespace=self._config.cluster_config.namespace)}")
+                print(
+                    f"self.__client.is_job_running(name, namespace) = {self.__client.is_job_running(job_name, namespace=self._config.cluster_config.namespace)}")
+
+                while self.__client.get_job_status(job_name, namespace=self._config.cluster_config.namespace) != "Succeeded":
+                    time.sleep(1)
+                completion_time[index] = time.time() - server_start_time # Log when the job was completed
+                print("################################# I survived scary loop! #################################") # to test that this is not an inf loop
+                index += 1 # inc our job-index
+                print(f"index = {index}")
+                # If the next job was supposed to enter the system already
+                if time.time() - arrival_in_q[index-1] >= inter_arrival_times[index]:
+                    arrival_in_q[index] = arrival_in_q[index-1] + inter_arrival_times[index]
+                # If the next job was has still "not arrived" according to timer, wait the reminder
+                if time.time() - arrival_in_q[index-1] < inter_arrival_times[index]:
+                    time.sleep(inter_arrival_times[index] - (time.time() - arrival_in_q[index-1]))
+                #### END QUE STUFF #####
 
             self.__logger.debug("Still alive...")
             # print(self.deployed_tasks.__sizeof__())

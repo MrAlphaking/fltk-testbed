@@ -1,5 +1,5 @@
 helm uninstall -n test orchestrator
-DOCKER_BUILDKIT=1 docker build . --tag gcr.io/industrial-ego-325412/fltk
-docker push gcr.io/industrial-ego-325412/fltk
+DOCKER_BUILDKIT=1 docker build . --tag gcr.io/qpecs-project-backend/fltk
+docker push gcr.io/qpecs-project-backend/fltk
 helm install orchestrator ./charts/orchestrator -f charts/fltk-values.yaml -n test
 
