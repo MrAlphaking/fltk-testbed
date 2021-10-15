@@ -335,7 +335,8 @@ class DeploymentBuilder:
         job = V1PyTorchJob(
             api_version="kubeflow.org/v1",
             kind="PyTorchJob",
-            metadata=V1ObjectMeta(name=f'trainjob-{str(random.randint(0, 1000))}-cores-{task.sys_conf.executor_cores}-bs-{task.param_conf.bs}-lr-{task.param_conf.lr}', namespace='test'),
+            # metadata=V1ObjectMeta(name=f'trainjob-{str(random.randint(0, 1000))}-cores-{task.sys_conf.executor_cores}-bs-{task.param_conf.bs}-lr-{task.param_conf.lr}', namespace='test'),
+            metadata=V1ObjectMeta(name=f'trainjob-{self._buildDescription.id}',namespace='test'),
             spec=self._buildDescription.spec)
         return job
 

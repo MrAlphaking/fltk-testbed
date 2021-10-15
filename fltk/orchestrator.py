@@ -4,6 +4,8 @@ import uuid
 from queue import PriorityQueue
 from typing import List
 import numpy as np
+import threading
+import multiprocessing
 
 from kubeflow.pytorchjob import PyTorchJobClient
 from kubeflow.pytorchjob.constants.constants import PYTORCHJOB_GROUP, PYTORCHJOB_VERSION, PYTORCHJOB_PLURAL
@@ -14,7 +16,7 @@ from fltk.util.config.base_config import BareConfig
 from fltk.util.task.generator.arrival_generator import ArrivalGenerator, Arrival
 from fltk.util.task.task import ArrivalTask
 
-AMOUNT_OF_TASKS = 4
+AMOUNT_OF_TASKS = 60
 
 # AMOUNT_OF_TASKS needs to match the total amount of jobs im scheduling or it wont start
 
@@ -24,10 +26,14 @@ service_rate = 1
 
 jobs = []
 
-# inter_arrival_times = np.random.exponential(1/lamda, number_of_jobs)*10
-# job_sizes = np.maximum(np.floor(np.random.exponential(1/service_rate, number_of_jobs) * 3), np.ones(number_of_jobs))
-inter_arrival_times = [1,1,1,1]
-job_sizes = [1,1,1,1]
+random_seed = np.random.randint(0,200)
+print(f"########################## Using seed = {random_seed} ##########################")
+
+np.random.seed(random_seed)
+inter_arrival_times = np.random.exponential(1/lamda, number_of_jobs)*100
+job_sizes = np.maximum(np.floor(np.random.exponential(1/service_rate, number_of_jobs * 2) * 3), np.ones(number_of_jobs * 2)).astype(int) # *2 because there is an issue with the indexing for this part
+# inter_arrival_times = [1,1,1,1]
+# job_sizes = [1,1,1,1]
 
 arrival_in_q = np.zeros(number_of_jobs)
 arrival_in_server = np.zeros(number_of_jobs)
@@ -93,6 +99,7 @@ class Orchestrator(object):
             self.__clear_jobs()
 
         print("################################# Created index #################################")
+        event_object = multiprocessing.Event()
         index = 0
         index_arrivals = 0
 
@@ -137,9 +144,11 @@ class Orchestrator(object):
             #### QUE STUFF #####
             print("################################# Starting que stuff #################################")
             server_start_time = time.time() # Start timer on deployment start
-            time.sleep(inter_arrival_times[index]) # Wait the first interarrival time
+            event_object.wait(timeout=inter_arrival_times[index]) # Wait the first interarrival time
             arrival_in_q[0] = time.time() - server_start_time   # log the first entry to the q
             #### END QUE STUFF #####
+
+
 
             while not self.pending_tasks.empty():
                 #### QUE STUFF #####
@@ -162,33 +171,83 @@ class Orchestrator(object):
                 # return
 
                 #### QUE STUFF #####
+
+                # Wait until job completes
+                print(f"################################# Entering wait loop, job {index} #################################")
+                condition = True
+                wait_index = 0
+                while condition:
+                    wait_index += 1
+                    time.sleep(1)
+                    if (wait_index > 2):
+                        print(f"Wait loop iteration {wait_index}")
+                        print(f"trainjob-{curr_task.id}")
+                    # job_name_1 = \
+                    # self.__client.get(namespace=self._config.cluster_config.namespace)['items'][0]['metadata'][
+                    #     'name'] # + "-master-0"
+
+                    # job_name_2 = "trainjob-" + curr_task.id
+                    # print(f"job_name_2 = {job_name_2}")
+                    try:
+                        status = self.__client.get_job_status(f"trainjob-{curr_task.id}", namespace='test')
+                        # status = self.__client.get_job_status(job_name_1, namespace='test')
+                        if status == 'Succeeded':
+                            self.__logger.info(f"trainjob-{curr_task.id} has been completed #################################")
+                            print(f"################################# Job completed at time = {time.time()-start_time}")
+                            completion_time[index] = time.time() - server_start_time - arrival_in_server[index]  # Log when the job was completed
+                            index += 1  # inc our job-index
+                            condition = False
+                            break
+                        else:
+                            # print(f"Job trainjob-{curr_task.id} not completed yet, but no error thrown!")
+                            wait_index -= 1
+                    except IndexError as e:
+                        self.__logger.info(f"trainjob-{curr_task.id} has not yet been configured fully")
+                        # print(f"trainjob-{job_name_1} has not yet been configured fully")
+                        if wait_index > 50:
+                            self.stop()
+
+                    if wait_index > 50:
+                        self.stop()
+
+                # print(f"self._config.cluster_config.namespace) = {self._config.cluster_config.namespace}")
+                # print(f"trainjob-{curr_task.id}")
+                # print(self.__client.get_job_status(f'trainjob-{curr_task.id}', namespace='test'))
+                # print(f"self._client.get_job_status(trainjob-{curr_task.id}, namespace='test') = {self.__client.get_job_status(f'trainjob-{curr_task.id}', namespace='test')}")
+                # print(f"self.__client.get(namespace=self._config.cluster_config.namespace)['items'][0]['metadata']['name']: {self.__client.get(namespace=self._config.cluster_config.namespace)['items'][0]['metadata']['name']}")
+                # job_name = self.__client.get(namespace=self._config.cluster_config.namespace)['items'][0]['metadata']['name'] #+ "-master-0"
+                # print(f"self.__client.get_job_status = {self.__client.get_job_status(job_name, namespace=self._config.cluster_config.namespace)}")
+                # print(
+                #     f"self.__client.is_job_running(name, namespace) = {self.__client.is_job_running(job_name, namespace=self._config.cluster_config.namespace)}")
+
+                print(f"################################# I survived scary loop, job {index}! #################################") # to test that this is not an inf loop
                 # If we finished all the jobs stop, to avoid index out of bounds etc
                 if index == number_of_jobs:
-                    print("Job: i, arrival in q time: time, arrival in server time: time, completion time: time")
-                    for i in range(number_of_jobs):
-                        print(f"{i} {arrival_in_q[i]} {arrival_in_server[i]} {completion_time[i]}")
+                    print("############################## Printing results ##############################")
+                    print(f"Random seed used = {random_seed}")
+                    print("Inter arrival times:")
+                    print(inter_arrival_times)
+                    print("Job sizes:")
+                    print(job_sizes)
+                    print("Arrival times in q:")
+                    print(arrival_in_q)
+                    print("arrival in server times:")
+                    print(arrival_in_server)
+                    print("Completion times:")
+                    print(completion_time)
+                    # print("Job: i, arrival in q time: time, arrival in server time: time, completion time: time")
+                    # for i in range(number_of_jobs):
+                    #     print(f"{i} {arrival_in_q[i]} {arrival_in_server[i]} {completion_time[i]}")
                     self.stop()
-                # Wait until job completes
-                print("################################# (Not) Sleeping 100 #################################")
-                # time.sleep(100) # This is here because checking job status too early may cause it to crash
-                print(f"self.__client.get(namespace=self._config.cluster_config.namespace)['items'][0]['metadata']['name']: {self.__client.get(namespace=self._config.cluster_config.namespace)['items'][0]['metadata']['name']}")
-                job_name = self.__client.get(namespace=self._config.cluster_config.namespace)['items'][0]['metadata']['name'] #+ "-master-0"
-                print(f"self.__client.get_job_status = {self.__client.get_job_status(job_name, namespace=self._config.cluster_config.namespace)}")
-                print(
-                    f"self.__client.is_job_running(name, namespace) = {self.__client.is_job_running(job_name, namespace=self._config.cluster_config.namespace)}")
-
-                while self.__client.get_job_status(job_name, namespace=self._config.cluster_config.namespace) != "Succeeded":
-                    time.sleep(1)
-                completion_time[index] = time.time() - server_start_time # Log when the job was completed
-                print("################################# I survived scary loop! #################################") # to test that this is not an inf loop
-                index += 1 # inc our job-index
-                print(f"index = {index}")
                 # If the next job was supposed to enter the system already
                 if time.time() - arrival_in_q[index-1] >= inter_arrival_times[index]:
                     arrival_in_q[index] = arrival_in_q[index-1] + inter_arrival_times[index]
+                    print("############################## Job arrived and entered q ##############################")
                 # If the next job was has still "not arrived" according to timer, wait the reminder
-                if time.time() - arrival_in_q[index-1] < inter_arrival_times[index]:
-                    time.sleep(inter_arrival_times[index] - (time.time() - arrival_in_q[index-1]))
+                elif time.time() - arrival_in_q[index-1] < inter_arrival_times[index]:
+                    print(
+                        "############################## Job arrived and entered server directly ##############################")
+                    event_object.wait(timeout=(inter_arrival_times[index] - (time.time() - arrival_in_q[index-1])))
                 #### END QUE STUFF #####
 
             self.__logger.debug("Still alive...")
