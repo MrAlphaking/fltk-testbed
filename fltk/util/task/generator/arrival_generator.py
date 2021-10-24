@@ -103,7 +103,7 @@ class ExperimentGenerator(ArrivalGenerator):
         @param task_id: identifier for a training task corresponding to the JobDescription.
         @type task_id: str
         """
-        self.logger.info(f"Creating task for {task_id}")
+        # self.logger.info(f"Creating task for {task_id}")
         job: JobDescription = self.job_dict[task_id]
         parameters: JobClassParameter = choices(job.job_class_parameters, [param.class_probability for param in job.job_class_parameters])[0]
         priority = choices(parameters.priorities, [prio.probability for prio in parameters.priorities], k=1)[0]
@@ -143,7 +143,7 @@ class ExperimentGenerator(ArrivalGenerator):
         for task_id in self.job_dict.keys():
             new_arrival: Arrival = self.generate_arrival(task_id)
             self._tick_list.append(new_arrival)
-            self.logger.info(f"Arrival {new_arrival} arrives at {new_arrival.ticks} seconds")
+            # self.logger.info(f"Arrival {new_arrival} arrives at {new_arrival.ticks} seconds")
         event = multiprocessing.Event()
         while self._alive and time.time() - self.start_time < duration:
             save_time = time.time()
@@ -155,7 +155,7 @@ class ExperimentGenerator(ArrivalGenerator):
                     self.arrivals.put(entry)
                     new_arrival = self.generate_arrival(entry.task_id)
                     new_scheduled.append(new_arrival)
-                    self.logger.info(f"Arrival {new_arrival} arrives at {new_arrival.ticks} seconds")
+                    # self.logger.info(f"Arrival {new_arrival} arrives at {new_arrival.ticks} seconds")
                 else:
                     new_scheduled.append(entry)
             self._tick_list = new_scheduled
