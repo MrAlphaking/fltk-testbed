@@ -14,7 +14,7 @@
         },
         "hyperParameters": {
           "batchSize": "64",
-          "maxEpoch": "10",
+          "maxEpoch": "20",
           "learningRate": "0.001",
           "learningrateDecay": "0.0002"
         },
@@ -45,7 +45,7 @@
         },
         "hyperParameters": {
           "batchSize": "64",
-          "maxEpoch": "10",
+          "maxEpoch": "20",
           "learningRate": "0.001",
           "learningrateDecay": "0.0002"
         },
@@ -76,7 +76,7 @@
         },
         "hyperParameters": {
           "batchSize": "128",
-          "maxEpoch": "10",
+          "maxEpoch": "30",
           "learningRate": "0.001",
           "learningrateDecay": "0.0002"
         },
@@ -107,7 +107,7 @@
         },
         "hyperParameters": {
           "batchSize": "128",
-          "maxEpoch": "10",
+          "maxEpoch": "30",
           "learningRate": "0.001",
           "learningrateDecay": "0.0002"
         },
@@ -138,7 +138,7 @@
         },
         "hyperParameters": {
           "batchSize": "64",
-          "maxEpoch": "10",
+          "maxEpoch": "20",
           "learningRate": "0.0001",
           "learningrateDecay": "0.0002"
         },
@@ -169,7 +169,7 @@
         },
         "hyperParameters": {
           "batchSize": "64",
-          "maxEpoch": "10",
+          "maxEpoch": "20",
           "learningRate": "0.0001",
           "learningrateDecay": "0.0002"
         },
@@ -200,7 +200,7 @@
         },
         "hyperParameters": {
           "batchSize": "128",
-          "maxEpoch": "10",
+          "maxEpoch": "30",
           "learningRate": "0.0001",
           "learningrateDecay": "0.0002"
         },
@@ -231,7 +231,7 @@
         },
         "hyperParameters": {
           "batchSize": "128",
-          "maxEpoch": "10",
+          "maxEpoch": "30",
           "learningRate": "0.0001",
           "learningrateDecay": "0.0002"
         },

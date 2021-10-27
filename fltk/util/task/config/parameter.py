@@ -7,7 +7,7 @@ from dataclasses_json import config, dataclass_json
 
 
 @dataclass_json
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class HyperParameters:
     """
     Learning HyperParameters.

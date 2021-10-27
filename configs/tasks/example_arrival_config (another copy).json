@@ -138,8 +138,8 @@
         },
         "hyperParameters": {
           "batchSize": "64",
-          "maxEpoch": "10",
-          "learningRate": "0.0001",
+          "maxEpoch": "50",
+          "learningRate": "0.0005",
           "learningrateDecay": "0.0002"
         },
         "classProbability": 0.1,
@@ -169,8 +169,8 @@
         },
         "hyperParameters": {
           "batchSize": "64",
-          "maxEpoch": "10",
-          "learningRate": "0.0001",
+          "maxEpoch": "50",
+          "learningRate": "0.0005",
           "learningrateDecay": "0.0002"
         },
         "classProbability": 0.1,
@@ -200,8 +200,8 @@
         },
         "hyperParameters": {
           "batchSize": "128",
-          "maxEpoch": "10",
-          "learningRate": "0.0001",
+          "maxEpoch": "50",
+          "learningRate": "0.0005",
           "learningrateDecay": "0.0002"
         },
         "classProbability": 0.1,
@@ -231,8 +231,8 @@
         },
         "hyperParameters": {
           "batchSize": "128",
-          "maxEpoch": "10",
-          "learningRate": "0.0001",
+          "maxEpoch": "50",
+          "learningRate": "0.0005",
           "learningrateDecay": "0.0002"
         },
         "classProbability": 0.1,

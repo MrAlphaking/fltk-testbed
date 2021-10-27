@@ -13,7 +13,7 @@ from fltk.util.config.base_config import BareConfig
 from fltk.util.task.generator.arrival_generator import ArrivalGenerator, Arrival
 from fltk.util.task.task import ArrivalTask
 
-AMOUNT_OF_TASKS = 4
+AMOUNT_OF_TASKS = 2
 
 class Orchestrator(object):
     """
@@ -105,6 +105,7 @@ class Orchestrator(object):
             while not self.pending_tasks.empty():
                 # Do blocking request to priority queue
                 curr_task = self.pending_tasks.get()
+                # curr_task.param_conf
                 self.__logger.info(f"Scheduling arrival of Arrival: {curr_task.id}")
                 job_to_start = construct_job(self._config, curr_task)
 

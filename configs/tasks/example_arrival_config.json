@@ -1,20 +1,20 @@
 [
-  {
+    {
     "jobClassParameters": [
       {
         "networkConfiguration": {
-          "network": "FashionMNISTCNN",
-          "dataset": "FashionMNIST"
+          "network": "CIFAR10CNN",
+          "dataset": "CIFAR10"
         },
         "systemParameters": {
           "dataParallelism": "1",
-          "executorCores": "1",
+          "executorCores": "3",
           "executorMemory": "5Gi",
           "action": "train"
         },
         "hyperParameters": {
-          "batchSize": "64",
-          "maxEpoch": "10",
+          "batchSize": "512",
+          "maxEpoch": "50",
           "learningRate": "0.001",
           "learningrateDecay": "0.0002"
         },
@@ -30,7 +30,7 @@
     "lambda": 20,
     "preemptJobs": 0
   },
-  {
+    {
     "jobClassParameters": [
       {
         "networkConfiguration": {
@@ -39,75 +39,13 @@
         },
         "systemParameters": {
           "dataParallelism": "1",
-          "executorCores": "2",
+          "executorCores": "3",
           "executorMemory": "5Gi",
           "action": "train"
         },
         "hyperParameters": {
-          "batchSize": "64",
-          "maxEpoch": "10",
-          "learningRate": "0.001",
-          "learningrateDecay": "0.0002"
-        },
-        "classProbability": 0.1,
-        "priorities": [
-          {
-            "priority": 1,
-            "probability": 1
-          }
-        ]
-      }
-    ],
-    "lambda": 20,
-    "preemptJobs": 0
-  },
-  {
-    "jobClassParameters": [
-      {
-        "networkConfiguration": {
-          "network": "FashionMNISTCNN",
-          "dataset": "FashionMNIST"
-        },
-        "systemParameters": {
-          "dataParallelism": "1",
-          "executorCores": "1",
-          "executorMemory": "5Gi",
-          "action": "train"
-        },
-        "hyperParameters": {
-          "batchSize": "1024",
-          "maxEpoch": "10",
-          "learningRate": "0.001",
-          "learningrateDecay": "0.0002"
-        },
-        "classProbability": 0.1,
-        "priorities": [
-          {
-            "priority": 1,
-            "probability": 1
-          }
-        ]
-      }
-    ],
-    "lambda": 20,
-    "preemptJobs": 0
-  },
-  {
-    "jobClassParameters": [
-      {
-        "networkConfiguration": {
-          "network": "FashionMNISTCNN",
-          "dataset": "FashionMNIST"
-        },
-        "systemParameters": {
-          "dataParallelism": "1",
-          "executorCores": "2",
-          "executorMemory": "5Gi",
-          "action": "train"
-        },
-        "hyperParameters": {
-          "batchSize": "1024",
-          "maxEpoch": "10",
+          "batchSize": "512",
+          "maxEpoch": "50",
           "learningRate": "0.001",
           "learningrateDecay": "0.0002"
         },
@@ -124,4 +62,3 @@
     "preemptJobs": 0
   }
 ]
-

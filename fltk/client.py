@@ -128,13 +128,17 @@ class Client(object):
         final_running_loss = 0.0
         self.model.train()
 
+        shouldQuit = False
+
         listLength = len(self.dataset.get_train_loader())
 
         for i, (inputs, labels) in enumerate(self.dataset.get_train_loader()):
-            if(i % (listLength / 1000) == 0):
+            if i % log_interval == 0:
                 start_time_test = datetime.datetime.now()
                 accuracy, test_loss, class_precision, class_recall, confusion_mat = self.test()
-
+                print(accuracy)
+                if accuracy > 90.2:
+                    shouldQuit = True
                 elapsed_time_test = datetime.datetime.now() - start_time_test
                 elapsed_time_from_start = start_time_test - start_time_train
                 self._logger.info("HEREEE")
@@ -193,7 +197,7 @@ class Client(object):
             # logger created by the rank==0 node during the training process (i.e. to keep track of process).
             self.save_model(epoch)
 
-        return final_running_loss
+        return final_running_loss, shouldQuit
 
     def test(self) -> Tuple[float, float, np.array, np.array, np.array]:
         correct = 0
@@ -243,10 +247,11 @@ class Client(object):
 
         epoch_results = []
         lastaccuracy = 0
+        quitenow = False
         for epoch in range(1, max_epoch):
-            if lastaccuracy <= 92:
-                train_loss = self.train(epoch, start_time_train, epoch_results)
-
+            if not quitenow:
+                train_loss, shouldQuit = self.train(epoch, start_time_train, epoch_results)
+                quitenow = shouldQuit
                 # Let only the 'master node' work on training. Possibly DDP can be used
                 # to have a distributed test loader as well to speed up (would require
                 # aggregation of data.
